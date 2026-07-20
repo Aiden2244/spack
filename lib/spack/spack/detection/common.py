@@ -273,7 +273,13 @@ class WindowsCompilerExternalPaths:
 
         At the moment simply returns location of VS install paths from VSWhere
         But should be extended to include more information as relevant"""
-        return list(winOs.WindowsOs().vs_install_paths)
+        # vs_install_paths is a list of lists (one inner list per queried arch
+        # component), so flatten it the same way msvc_paths does.
+        return [
+            component_path
+            for path in winOs.WindowsOs().vs_install_paths
+            for component_path in path
+        ]
 
     @staticmethod
     def find_windows_compiler_cmake_paths() -> List[str]:
