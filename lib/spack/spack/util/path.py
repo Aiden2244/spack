@@ -18,8 +18,13 @@ from urllib.parse import urlparse
 from spack.util import tty
 from spack.util.lang import memoized
 
-__all__ = []
+__all__ = ["StrPath"]
 
+#: A path argument as accepted at Spack's entry points: a ``str`` or any
+#: ``os.PathLike`` object such as ``pathlib.Path``. Used to standardize
+#: external path interfaces and mark entry boundaries for paths within spack
+#: objects.
+StrPath = Union[str, "os.PathLike[str]"]
 
 class Path:
     """Enum to identify the path-style."""
