@@ -75,6 +75,7 @@ import spack.util.spack_json as sjson
 import spack.util.spack_yaml as syaml
 from spack.util import filesystem, lang, tty
 from spack.util.cpus import cpus_available
+from spack.util.path import StrPath
 from spack.util.spack_yaml import get_mark_from_yaml_data
 
 from .enums import ConfigScopePriority
@@ -144,6 +145,9 @@ default_sigil = object()
 
 
 class ConfigScope:
+    #: Local filesystem path backing this scope, or ``None`` for in-memory scopes.
+    path: Optional[pathlib.Path] = None
+
     def __init__(self, name: str, included: bool = False) -> None:
         self.name = name
         self.writable = False
@@ -200,7 +204,7 @@ class ConfigScope:
             _names |= scope.transitive_includes(_names=_names)
         return _names
 
-    def get_section_filename(self, section: str) -> str:
+    def get_section_filename(self, section: str) -> pathlib.Path:
         raise NotImplementedError
 
     def get_section(self, section: str) -> Optional[YamlConfigDict]:
@@ -220,28 +224,30 @@ class ConfigScope:
 class DirectoryConfigScope(ConfigScope):
     """Config scope backed by a directory containing one file per section."""
 
+    path: pathlib.Path
+
     def __init__(
         self,
         name: str,
-        path: str,
+        path: StrPath,
         *,
         writable: bool = True,
         prefer_modify: bool = True,
         included: bool = False,
     ) -> None:
         super().__init__(name, included)
-        self.path = path
+        self.path = pathlib.Path(path)
         self.writable = writable
         self.prefer_modify = prefer_modify
 
     @property
     def exists(self) -> bool:
-        return os.path.exists(self.path)
+        return self.path.exists()
 
-    def get_section_filename(self, section: str) -> str:
+    def get_section_filename(self, section: str) -> pathlib.Path:
         """Returns the filename associated with a given section"""
         _validate_section_name(section)
-        return os.path.join(self.path, f"{section}.yaml")
+        return self.path / f"{section}.yaml"
 
     def get_section(self, section: str) -> Optional[YamlConfigDict]:
         """Returns the data associated with a given section if the scope exists"""
